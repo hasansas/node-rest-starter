@@ -8,8 +8,13 @@ export default function (app) {
 
   const appRouter = require('express').Router();
 
+  // Check health
+  appRouter.get('/__health', (req, res) => {
+    res.status(200).json({ message: 'OK' });
+  });
+
   // load all routes Dynamically
-  sync(__dirname + '/app/**/**/router.js').forEach(function (name) {
+  sync(__dirname + '/api/**/**/router.js').forEach(function (name) {
     require(name)(app, appRouter);
   });
 
