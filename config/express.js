@@ -1,9 +1,10 @@
 'use strict';
 
-import bodyParser from 'body-parser';
-import express from 'express';
+const bodyParser = require('body-parser');
+const multer = require('multer');
+const upload = multer();
 
-export default function(app) {
+export default function (app) {
   // Request body parser for url
   app.use(bodyParser.urlencoded({
     extended: true
@@ -12,6 +13,6 @@ export default function(app) {
   // Request body parser for json
   app.use(bodyParser.json());
 
-  // Static server
-  app.use( express.static(PUBLIC_DIR) );
+  // parsing multipart/form-data
+  app.use(upload.array());
 };
