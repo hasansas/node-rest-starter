@@ -6,8 +6,14 @@
 
 import express from 'express';
 import path from 'path';
+import http from 'http';
 import configExpress from './config/express';
 import router from './router';
+import socketIO from './socket_io';
+
+const app = express();
+const httpServer = http.createServer(app);
+
 
 /****************************************
 *       Global definition
@@ -23,10 +29,15 @@ global.APP_PORT = ENV.parsed.APP_PORT;
 
 
 /****************************************
-*         Configuring express
+*         Socket IO
 ****************************************/
 
-const app = express();
+socketIO(httpServer);
+
+
+/****************************************
+*         Configuring express
+****************************************/
 
 // Load express configurations
 configExpress(app);
@@ -40,6 +51,6 @@ router(app);
 *****************************************/
 
 // Start server
-app.listen(APP_PORT, () => {
-  console.log(`App listening on port 3000 ${APP_PORT}`);
+httpServer.listen(APP_PORT, () => {
+  console.log(`App listening on port ${APP_PORT}`);
 });

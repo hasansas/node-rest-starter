@@ -8,7 +8,13 @@ class Helo {
   }
 
   async index() {
-    this.res.status(200).json({ message: 'Helo World' });
+    const _message = 'Helo World';
+
+    // broadcast to connectent client
+    IO.emit('broadcast', _message);
+
+    // response
+    this.res.status(200).json({ message: _message });
   }
 }
 export default ({ req, res }) => new Helo({ req, res });
