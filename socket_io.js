@@ -2,6 +2,8 @@
  * Socket.IO
  */
 
+'use strict';
+
 export default function (httpServer) {
 
   global.IO = require("socket.io")(httpServer, {

@@ -1,4 +1,5 @@
 //
+'use strict';
 
 class Helo {
   constructor({ req, res }) {
@@ -8,7 +9,7 @@ class Helo {
   }
 
   async index() {
-    const _message = 'Helo World';
+    const _message = 'Helo World v1';
 
     // broadcast to connectent client
     IO.emit('broadcast', _message);

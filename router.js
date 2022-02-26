@@ -2,26 +2,36 @@
  * Routes
  */
 
+'use strict';
+
 import { sync } from 'glob';
+import express from 'express';
 
 export default function (app) {
-
-  const appRouter = require('express').Router();
-
   // Check health
-  appRouter.get('/__health', (req, res) => {
+  app.get('/__health', (req, res) => {
     res.status(200).json({ message: 'OK' });
   });
 
-  // load all routes Dynamically
-  sync(__dirname + '/api/**/**/router.js').forEach(function (name) {
-    require(name)(app, appRouter);
+  // load all v2 routes Dynamically
+  const apiRouterV1 = express.Router();
+  sync(__dirname + '/api/**/**/v1/router.js').forEach(function (name) {
+    require(name)(app, apiRouterV1);
   });
 
   // router is configured and ready to use
-  app.use('/', appRouter);
+  app.use('/v1/', apiRouterV1);
 
-  appRouter.use(function (req, res, next) {
+  // load all v2 routes Dynamically
+  const apiRouterV2 = express.Router();
+  sync(__dirname + '/api/**/**/v2/router.js').forEach(function (name) {
+    require(name)(app, apiRouterV2);
+  });
+
+  // router is configured and ready to use
+  app.use('/v2/', apiRouterV2);
+
+  app.use(function (req, res, next) {
     res.status(404).json({
       message: "Not Found"
     });
@@ -34,4 +44,5 @@ export default function (app) {
       status: 500
     });
   });
+
 }
