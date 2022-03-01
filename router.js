@@ -19,7 +19,6 @@ export default function (app) {
     require(name)(app, apiRouterV1);
   });
 
-  // router is configured and ready to use
   app.use('/v1/', apiRouterV1);
 
   // load all v2 routes Dynamically
@@ -28,9 +27,9 @@ export default function (app) {
     require(name)(app, apiRouterV2);
   });
 
-  // router is configured and ready to use
   app.use('/v2/', apiRouterV2);
 
+  // router not found
   app.use(function (req, res, next) {
     res.status(404).json({
       message: "Not Found"
@@ -44,5 +43,4 @@ export default function (app) {
       status: 500
     });
   });
-
 }
