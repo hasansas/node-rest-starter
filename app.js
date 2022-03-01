@@ -10,6 +10,7 @@ import http from 'http';
 import configExpress from './config/express';
 import router from './router';
 import socketIO from './socket_io';
+import authenticateJWT from './config/jwt';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -26,6 +27,9 @@ global.ROOT_DIR = path.resolve(__dirname, './');
 global.ENV = require('dotenv').config({ path: path.resolve(ROOT_DIR, ".env") });
 global.APP_HOST = ENV.parsed.APP_HOST;
 global.APP_PORT = ENV.parsed.APP_PORT;
+
+// JWT Middleware
+global.authenticateJWT = authenticateJWT;
 
 
 /****************************************
