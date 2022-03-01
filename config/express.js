@@ -1,3 +1,7 @@
+/**
+ * Express Config
+ */
+
 'use strict';
 
 import jsonResponse from '../helpers/json_response';

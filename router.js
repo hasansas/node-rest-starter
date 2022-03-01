@@ -13,8 +13,29 @@ export default function (app) {
     res.status(200).json({ message: 'OK' });
   });
 
-  // load all v2 routes Dynamically
+  // x-api-key
+  app.use(function (req, res, next) {
+    const _xApiKeyHeader = req.headers['x-api-key'];
+    const _xApiKey = ENV.parsed.X_API_KEY;
+
+    if (!_xApiKeyHeader) {
+      return res.status(403).json({
+        message: 'No API key was found',
+        status: 403
+      });
+    }
+    if (_xApiKeyHeader != _xApiKey) {
+      return res.status(401).json({
+        message: 'Invalid API key',
+        status: 401
+      });
+    }
+    next();
+  });
+
+  // load all v1 routes Dynamically
   const apiRouterV1 = express.Router();
+
   sync(__dirname + '/api/**/**/v1/router.js').forEach(function (name) {
     require(name)(app, apiRouterV1);
   });
@@ -23,6 +44,19 @@ export default function (app) {
 
   // load all v2 routes Dynamically
   const apiRouterV2 = express.Router();
+
+  apiRouterV2.use(function (req, res, next) {
+    const authHeader = req.headers['x-api-key'];
+    console.log(authHeader)
+    if (!authHeader || authHeader != '12345') {
+      return res.status(500).json({
+        message: err.message,
+        status: 500
+      });
+    }
+    next();
+  });
+
   sync(__dirname + '/api/**/**/v2/router.js').forEach(function (name) {
     require(name)(app, apiRouterV2);
   });
