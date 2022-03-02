@@ -6,6 +6,7 @@
 
 import { sync } from 'glob';
 import express from 'express';
+import authenticateAPI from './middleware/api';
 
 export default function (app) {
   // Check health
@@ -15,22 +16,7 @@ export default function (app) {
 
   // x-api-key
   app.use(function (req, res, next) {
-    const _xApiKeyHeader = req.headers['x-api-key'];
-    const _xApiKey = ENV.parsed.X_API_KEY;
-
-    if (!_xApiKeyHeader) {
-      return res.status(403).json({
-        message: 'No API key was found',
-        status: 403
-      });
-    }
-    if (_xApiKeyHeader != _xApiKey) {
-      return res.status(401).json({
-        message: 'Invalid API key',
-        status: 401
-      });
-    }
-    next();
+    authenticateAPI(req, res, next);
   });
 
   // load all v1 routes Dynamically
