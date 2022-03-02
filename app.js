@@ -10,7 +10,7 @@ import http from 'http';
 import configExpress from './config/express';
 import router from './router';
 import socketIO from './socket_io';
-import authenticateJWT from './config/jwt';
+import authenticateJWT from './middleware/jwt';
 
 const app = express();
 const httpServer = http.createServer(app);
