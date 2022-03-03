@@ -4,6 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "db-dev:create": "NODE_ENV=development sequelize-cli db:create",
+    "db-test:create": "NODE_ENV=test sequelize-cli db:create",
+    "db:create": "NODE_ENV=production sequelize-cli db:create",
     "dev": "NODE_ENV=development nodemon --exec npm run start",
     "start": "babel-node app.js"
   },
@@ -16,6 +19,8 @@
     "glob": "^7.2.0",
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.4",
+    "pg": "^8.7.3",
+    "pg-hstore": "^2.3.4",
     "sequelize": "^6.17.0",
     "socket.io": "^4.4.1"
   },
@@ -24,6 +29,8 @@
     "@babel/core": "^7.16.12",
     "@babel/node": "^7.16.8",
     "@babel/preset-env": "^7.16.11",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "sequelize-cli": "^6.4.1",
+    "standard": "^16.0.4"
   }
 }
