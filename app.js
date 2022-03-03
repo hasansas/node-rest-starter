@@ -12,6 +12,7 @@ import router from './router';
 import socketIO from './socket_io';
 import authenticateJWT from './middleware/jwt';
 
+// const db = require("./database/models");
 const app = express();
 const httpServer = http.createServer(app);
 
@@ -30,6 +31,10 @@ global.APP_PORT = ENV.parsed.APP_PORT;
 
 // JWT Middleware
 global.authenticateJWT = authenticateJWT;
+
+// Database
+const db = require('./database/models');
+global.db = db;
 
 
 /****************************************
