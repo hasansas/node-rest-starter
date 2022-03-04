@@ -20,17 +20,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false
       }
+    },
+    {
+      tableName: 'Users',
+      defaultScope: {
+        // attributes: { exclude: ['firstName'] }
+      },
+      scopes: {
+        // ..
+      }
     }
-    // {
-    //   defaultScope: {
-    //     attributes: { exclude: ['password', 'verifyToken', 'isAdmin'] }
-    //   },
-    //   scopes: {
-    //     withSecretColumns: {
-    //       attributes: { include: ['password', 'verifyToken', 'isAdmin'] }
-    //     }
-    //   }
-    // }
   )
   User.associate = function (models) {
     // associations can be defined here
