@@ -9,26 +9,23 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      firstName: {
+      full_name: {
         type: DataTypes.STRING,
-        allowNull: false
-      },
-      lastName: {
-        type: DataTypes.STRING
       },
       email: {
-        type: DataTypes.STRING,
-        allowNull: false
-      }
+        allowNull: false,
+        type: DataTypes.STRING
+      },
     },
     {
-      tableName: 'Users',
+      tableName: 'users',
+      freezeTableName: true,
       defaultScope: {
-        // attributes: { exclude: ['firstName'] }
+        attributes: { exclude: ['createdAt', 'updatedAt'] }
       },
       scopes: {
         // ..
-      }
+      },
     }
   )
   User.associate = function (models) {

@@ -20,34 +20,13 @@ export default function (app) {
   });
 
   // load all v1 routes Dynamically
-  const apiRouterV1 = express.Router();
+  const _router = express.Router();
 
-  sync(__dirname + '/api/**/**/v1/router.js').forEach(function (name) {
-    require(name)(app, apiRouterV1);
+  sync(__dirname + '/api/**/**/router.js').forEach(function (name) {
+    require(name)(app, _router);
   });
 
-  app.use('/v1/', apiRouterV1);
-
-  // load all v2 routes Dynamically
-  const apiRouterV2 = express.Router();
-
-  apiRouterV2.use(function (req, res, next) {
-    const authHeader = req.headers['x-api-key'];
-    console.log(authHeader)
-    if (!authHeader || authHeader != '12345') {
-      return res.status(500).json({
-        message: err.message,
-        status: 500
-      });
-    }
-    next();
-  });
-
-  sync(__dirname + '/api/**/**/v2/router.js').forEach(function (name) {
-    require(name)(app, apiRouterV2);
-  });
-
-  app.use('/v2/', apiRouterV2);
+  app.use('/', _router);
 
   // router not found
   app.use(function (req, res, next) {

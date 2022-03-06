@@ -12,7 +12,6 @@ import router from './router';
 import socketIO from './socket_io';
 import authenticateJWT from './middleware/jwt';
 
-// const db = require("./database/models");
 const app = express();
 const httpServer = http.createServer(app);
 
