@@ -12,12 +12,10 @@ const sequalizeConfig = {
   ...config,
   ...{
     define: {
-      // timestamps: true,
       underscored: true,
       underscoredAll: true,
-      // createdAt: 'created_at',
-      // updatedAt: 'updated_at',
-      // deletedAt: 'deleted_at',
+      timestamps: true,
+      paranoid: true
     }
   }
 }
@@ -30,7 +28,7 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database, config.username, config.password, sequalizeConfig);
 }
 
-sync(ROOT_DIR + '/api/**/**/v1/model.js').forEach(function (file) {
+sync(ROOT_DIR + '/api/**/**/model.js').forEach(function (file) {
   console.log(file)
   const model = require(file)(sequelize, Sequelize.DataTypes);
   db[model.name] = model;

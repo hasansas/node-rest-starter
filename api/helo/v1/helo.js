@@ -15,26 +15,26 @@ class Helo {
     IO.emit('broadcast', _message);
 
     // response
-    // this.res.status(200).json({ message: _message });
+    this.res.status(200).json({ message: _message });
 
 
 
-    // return User
-    //   .create({
-    //     firstName: 'john wick',
-    //     email: 'johnwick@aa.com',
-    //   })
-    //   .then((user) => this.res.status(201).send(user))
-    //   .catch((error) => this.res.status(400).send(error));
-    return User
-      .findAll({
-        include: [],
-        order: [
-          ['createdAt', 'DESC'],
-        ],
-      })
-      .then((users) => this.res.status(200).send(users))
-      .catch((error) => { this.res.status(400).send(error); });
+    //   // return User
+    //   //   .create({
+    //   //     fullName: 'john wick',
+    //   //     email: 'johnwick@aa.com',
+    //   //   })
+    //   //   .then((user) => this.res.status(201).send(user))
+    //   //   .catch((error) => this.res.status(400).send(error));
+    //   return User
+    //     .findAll({
+    //       include: [],
+    //       order: [
+    //         ['createdAt', 'DESC'],
+    //       ],
+    //     })
+    //     .then((users) => this.res.status(200).send(users))
+    //     .catch((error) => { this.res.status(400).send(error); });
   }
 }
 export default ({ req, res }) => new Helo({ req, res });
