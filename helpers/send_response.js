@@ -12,13 +12,32 @@ export const sendSuccessResponse = function (res, code, data, message = 'Success
   });
 }
 
-export const sendErrorResponse = function (res, code, errorMessage = 'Cannot perform operation', error = null) {
+export const sendErrorResponse = function (res, code, error = null) {
+  const _httpResponseMessage = httpResponse.message(code);
+  let _errorMessage = error.message ?? _httpResponseMessage.description;
+  let _error = error.errors ?? null;
+
+  if (error.name) {
+    switch (error.name) {
+      case 'SequelizeConnectionRefusedError':
+        _errorMessage = 'Error establishing a database connection';
+        break;
+
+      case 'SequelizeValidationError':
+        break;
+
+      default:
+        break;
+    }
+  }
+
   let _payload = {
     status: 'error',
-    message: errorMessage,
+    message: _errorMessage,
   }
-  if (error != null) {
-    _payload = { ..._payload, ...{ error: error } }
+
+  if (_error != null) {
+    _payload = { ..._payload, ...{ error: _error } }
   }
   return res.status(code).send(_payload);
 }

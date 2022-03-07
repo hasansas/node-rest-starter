@@ -4,6 +4,7 @@
 
 'use strict';
 
+import httpResponse from '../helpers/http_response';
 import sendResponse from '../helpers/send_response';
 
 const bodyParser = require('body-parser');
@@ -23,9 +24,10 @@ export default function (app) {
   // parsing multipart/form-data
   app.use(upload.array());
 
-  // Send Response
-  global.sendResponse = sendResponse;
-
   // Validator
   global.expressValidator = expressValidator;
+
+  // Response
+  global.httpResponse = httpResponse;
+  global.sendResponse = sendResponse;
 };

@@ -29,7 +29,6 @@ if (config.use_env_variable) {
 }
 
 sync(ROOT_DIR + '/api/**/**/model.js').forEach(function (file) {
-  console.log(file)
   const model = require(file)(sequelize, Sequelize.DataTypes);
   db[model.name] = model;
 });
