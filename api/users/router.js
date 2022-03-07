@@ -8,6 +8,7 @@ import UsersController from "./controller";
 
 module.exports = function (app, router) {
 
+  // Register User
   router.post(
     '/v1/register',
     expressValidator.body('email').isEmail().normalizeEmail(),
@@ -18,6 +19,7 @@ module.exports = function (app, router) {
     (req, res) => { UsersController({ req, res }).register(); }
   );
 
+  // Login
   router.post(
     '/v1/login',
     expressValidator.body('email').isEmail(),
@@ -26,6 +28,7 @@ module.exports = function (app, router) {
       UsersController({ req, res }).login();
     });
 
+  // Get Users
   router.get('/v1/users', authenticateJWT, (req, res) => {
     UsersController({ req, res }).index();
   });

@@ -20,7 +20,10 @@ class UsersController {
     // validate request
     const errors = expressValidator.validationResult(this.request);
     if (!errors.isEmpty()) {
-      return sendResponse.error(this.res, 400, 'Bad Request', errors.array());
+      const error = {
+        errors: errors.array()
+      }
+      return sendResponse.error(this.res, httpResponse.status.badRequest, error);
     }
 
     // save data
@@ -32,10 +35,10 @@ class UsersController {
 
       return this.users
         .create(_data)
-        .then((data) => sendResponse.success(this.res, 201, { id: data.id }))
-        .catch((error) => sendResponse.error(this.res, 400, 'Bad Request', error.errors));
+        .then((data) => sendResponse.success(this.res, httpResponse.status.created, { id: data.id }))
+        .catch((error) => sendResponse.error(this.res, httpResponse.status.badRequest, error));
     } catch (error) {
-      return sendResponse.error(this.res, 500, 'Internal Server Error', error);
+      return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
     }
   }
 
@@ -48,15 +51,15 @@ class UsersController {
     // validate request
     const errors = expressValidator.validationResult(this.request);
     if (!errors.isEmpty()) {
-      return sendResponse.error(this.res, 400, 'Bad Request', errors.array());
+      return sendResponse.error(this.res, httpResponse.status.badRequest, 'Bad Request', errors.array());
     }
 
     // check user credential
-    if (
-      this.request.body.email !== 'johndoe@domain.com'
-      || this.request.body.password !== '123456'
-    ) {
-      return sendResponse.error(this.res, 400, 'Invalid email and password combination')
+    if (this.request.body.email !== 'johndoe@domain.com' || this.request.body.password !== '123456') {
+      const error = {
+        message: 'Invalid email and password combination'
+      }
+      return sendResponse.error(this.res, httpResponse.status.badRequest, error)
     }
 
     // perfom login
@@ -66,7 +69,7 @@ class UsersController {
     const _token = _jwt.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' });
 
     // response
-    sendResponse.success(this.res, 200, { token: _token })
+    sendResponse.success(this.res, httpResponse.status.ok, { token: _token })
   }
 
 
@@ -82,10 +85,12 @@ class UsersController {
             ['createdAt', 'DESC'],
           ],
         })
-        .then((data) => sendResponse.success(this.res, 200, data))
-        .catch((error) => sendResponse.error(this.res, 400, 'Bad Request', error.errors));
+        .then((data) => sendResponse.success(this.res, httpResponse.status.ok, data))
+        .catch((error) => {
+          return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
+        });
     } catch (error) {
-      return sendResponse.error(this.res, 500, 'Internal Server Error', error);
+      return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
     }
   }
 }
