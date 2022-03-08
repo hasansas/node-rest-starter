@@ -13,9 +13,7 @@ const sequalizeConfig = {
   ...{
     define: {
       underscored: true,
-      underscoredAll: true,
-      timestamps: true,
-      paranoid: true
+      underscoredAll: true
     }
   }
 }
