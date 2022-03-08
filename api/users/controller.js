@@ -9,8 +9,10 @@ class UsersController {
     this.request = req;
     this.query = req.query;
     this.res = res;
-    this.users = db.Users;
+    this.usersModel = db.users;
+    this.userInfoModel = db.userInfo;
   }
+
 
   /*******************************************************
   *       Register User
@@ -33,10 +35,20 @@ class UsersController {
         email: this.request.body.email,
       }
 
-      return this.users
-        .create(_data)
-        .then((data) => sendResponse.success(this.res, httpResponse.status.created, { id: data.id }))
-        .catch((error) => sendResponse.error(this.res, httpResponse.status.badRequest, error));
+      // create user
+      const _createUser = await this.createUser(_data);
+      if (!_createUser.success) {
+        return sendResponse.error(this.res, _createUser.errorCode, _createUser.error);
+      }
+
+      // attach user info
+      const _attachUserInfo = await this.attachUserInfo(_createUser.data.id, _data);
+      if (!_attachUserInfo.success) {
+        return sendResponse.error(this.res, _attachUserInfo.errorCode, _attachUserInfo.error);
+      }
+
+      // success response
+      return sendResponse.success(this.res, httpResponse.status.created, { id: _createUser.data.id })
     } catch (error) {
       return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
     }
@@ -78,9 +90,12 @@ class UsersController {
   ********************************************************/
   async index() {
     try {
-      return this.users
+      return this.usersModel
         .findAll({
-          include: [],
+          include: [{
+            model: this.userInfoModel,
+            attributes: ['dateOfBirth', 'placeOfBirth', 'gender']
+          }],
           order: [
             ['createdAt', 'DESC'],
           ],
@@ -91,6 +106,64 @@ class UsersController {
         });
     } catch (error) {
       return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
+    }
+  }
+
+
+  /*******************************************************
+  *       Create User
+  ********************************************************/
+  async createUser(user) {
+    try {
+      return this.usersModel
+        .create(user)
+        .then((data) => {
+          return { success: true, data: data }
+        })
+        .catch((error) => {
+          return {
+            success: false,
+            errorCode: httpResponse.status.badRequest,
+            error: error
+          }
+        });
+    } catch (error) {
+      return {
+        success: false,
+        errorCode: httpResponse.status.internalServerError,
+        error: error
+      }
+    }
+  }
+
+
+  /*******************************************************
+  *       Attach User Info
+  ********************************************************/
+  async attachUserInfo(userId, userData) {
+    try {
+      const _userData = {
+        ...{ userId: userId },
+        ...userData
+      }
+      return this.userInfoModel
+        .create(_userData)
+        .then((data) => {
+          return { success: true, data: data }
+        })
+        .catch((error) => {
+          return {
+            success: false,
+            errorCode: httpResponse.status.badRequest,
+            error: error
+          }
+        });
+    } catch (error) {
+      return {
+        success: false,
+        errorCode: httpResponse.status.internalServerError,
+        error: error
+      }
     }
   }
 }

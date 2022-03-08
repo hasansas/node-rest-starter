@@ -6,7 +6,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const Users = sequelize.define(
-    'Users',
+    'users',
     {
       id: {
         type: DataTypes.UUID,
@@ -24,16 +24,14 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false
       },
       phoneNumber: {
-        type: DataTypes.STRING,
-        field: 'phone_number'
+        type: DataTypes.STRING
       },
       password: {
         type: DataTypes.STRING
       },
       firstLogin: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true,
-        field: 'first_login'
+        defaultValue: true
       },
       active: {
         type: DataTypes.BOOLEAN,
@@ -46,8 +44,10 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: 'users',
       freezeTableName: true,
+      timestamps: true,
+      paranoid: true,
       defaultScope: {
-        attributes: { exclude: ['createdAt', 'updatedAt'] }
+        attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] }
       },
       scopes: {
         // ..
@@ -55,7 +55,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   )
   Users.associate = function (models) {
-    // associations can be defined here
+    Users.hasOne(models.userInfo, {
+      // as: 'userInfo',
+      foreignKey: 'user_id',
+      required: false
+    })
   }
   return Users
 }
