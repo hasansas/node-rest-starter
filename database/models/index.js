@@ -9,6 +9,7 @@ const config = require(path.join(ROOT_DIR, '/config/sequelize.js'))[env]
 const sequalizeConfig = {
   ...config,
   ...{
+    logging: false,
     define: {
       underscored: true,
       underscoredAll: true
