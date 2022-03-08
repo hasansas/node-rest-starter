@@ -30,6 +30,7 @@
     "@babel/core": "^7.16.12",
     "@babel/node": "^7.16.8",
     "@babel/preset-env": "^7.16.11",
+    "@babel/register": "^7.17.0",
     "nodemon": "^2.0.15",
     "sequelize-cli": "^6.4.1",
     "standard": "^16.0.4"
