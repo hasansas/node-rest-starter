@@ -2,7 +2,7 @@
  * Users Model
  */
 
-'use strict';
+'use strict'
 
 module.exports = (sequelize, DataTypes) => {
   const Users = sequelize.define(
@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: false
       },
       email: {
         type: DataTypes.STRING,
@@ -38,8 +38,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false
       },
       image: {
-        type: DataTypes.STRING,
-      },
+        type: DataTypes.STRING
+      }
     },
     {
       tableName: 'users',
@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       scopes: {
         // ..
-      },
+      }
     }
   )
   Users.associate = function (models) {

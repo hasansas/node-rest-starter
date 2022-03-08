@@ -1,13 +1,11 @@
-'use strict';
+'use strict'
 
-import { sync } from 'glob';
+import { sync } from 'glob'
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../../config/sequelize.js')[env];
+const path = require('path')
+const Sequelize = require('sequelize')
+const env = process.env.NODE_ENV || 'development'
+const config = require(path.join(ROOT_DIR, '/config/sequelize.js'))[env]
 const sequalizeConfig = {
   ...config,
   ...{
@@ -17,27 +15,27 @@ const sequalizeConfig = {
     }
   }
 }
-const db = {};
+const db = {}
 
-let sequelize;
+let sequelize
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], sequalizeConfig);
+  sequelize = new Sequelize(process.env[config.use_env_variable], sequalizeConfig)
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, sequalizeConfig);
+  sequelize = new Sequelize(config.database, config.username, config.password, sequalizeConfig)
 }
 
-sync(ROOT_DIR + '/api/**/**/model.js').forEach(function (file) {
-  const model = require(file)(sequelize, Sequelize.DataTypes);
-  db[model.name] = model;
-});
+sync(path.join(ROOT_DIR, '/api/**/**/model.js')).forEach(function (file) {
+  const model = require(file)(sequelize, Sequelize.DataTypes)
+  db[model.name] = model
+})
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate(db)
   }
-});
+})
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+db.sequelize = sequelize
+db.Sequelize = Sequelize
 
-module.exports = db;
+module.exports = db
