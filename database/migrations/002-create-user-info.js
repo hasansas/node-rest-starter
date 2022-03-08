@@ -1,7 +1,7 @@
 'use strict'
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up (queryInterface, Sequelize) {
     await queryInterface.createTable('user_infos', {
       user_id: {
         type: Sequelize.UUID,
@@ -13,11 +13,11 @@ module.exports = {
       },
       dateOfBirth: {
         type: Sequelize.STRING,
-        field: 'date_of_birth',
+        field: 'date_of_birth'
       },
       placeOfBirth: {
         type: Sequelize.STRING,
-        field: 'place_of_birth',
+        field: 'place_of_birth'
       },
       gender: {
         type: Sequelize.ENUM,
@@ -45,7 +45,7 @@ module.exports = {
       }
     })
   },
-  async down(queryInterface, Sequelize) {
+  async down (queryInterface, Sequelize) {
     await queryInterface.dropTable('user_infos')
   }
 }

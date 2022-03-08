@@ -2,68 +2,64 @@
  * Users Controller
  */
 
-'use strict';
+'use strict'
 
 class UsersController {
-  constructor({ req, res }) {
-    this.request = req;
-    this.query = req.query;
-    this.res = res;
-    this.usersModel = db.users;
-    this.userInfoModel = db.userInfo;
+  constructor ({ req, res }) {
+    this.request = req
+    this.query = req.query
+    this.res = res
+    this.usersModel = db.users
+    this.userInfoModel = db.userInfo
   }
-
 
   /*******************************************************
   *       Register User
   ********************************************************/
-  async register() {
-
+  async register () {
     // validate request
-    const errors = expressValidator.validationResult(this.request);
+    const errors = expressValidator.validationResult(this.request)
     if (!errors.isEmpty()) {
       const error = {
         errors: errors.array()
       }
-      return sendResponse.error(this.res, httpResponse.status.badRequest, error);
+      return sendResponse.error(this.res, httpResponse.status.badRequest, error)
     }
 
     // save data
     try {
       const _data = {
         name: this.request.body.name,
-        email: this.request.body.email,
+        email: this.request.body.email
       }
 
       // create user
-      const _createUser = await this.createUser(_data);
+      const _createUser = await this.createUser(_data)
       if (!_createUser.success) {
-        return sendResponse.error(this.res, _createUser.errorCode, _createUser.error);
+        return sendResponse.error(this.res, _createUser.errorCode, _createUser.error)
       }
 
       // attach user info
-      const _attachUserInfo = await this.attachUserInfo(_createUser.data.id, _data);
+      const _attachUserInfo = await this.attachUserInfo(_createUser.data.id, _data)
       if (!_attachUserInfo.success) {
-        return sendResponse.error(this.res, _attachUserInfo.errorCode, _attachUserInfo.error);
+        return sendResponse.error(this.res, _attachUserInfo.errorCode, _attachUserInfo.error)
       }
 
       // success response
       return sendResponse.success(this.res, httpResponse.status.created, { id: _createUser.data.id })
     } catch (error) {
-      return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
+      return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
     }
   }
-
 
   /*******************************************************
   *       Login User
   ********************************************************/
-  async login() {
-
+  async login () {
     // validate request
-    const errors = expressValidator.validationResult(this.request);
+    const errors = expressValidator.validationResult(this.request)
     if (!errors.isEmpty()) {
-      return sendResponse.error(this.res, httpResponse.status.badRequest, 'Bad Request', errors.array());
+      return sendResponse.error(this.res, httpResponse.status.badRequest, 'Bad Request', errors.array())
     }
 
     // check user credential
@@ -75,20 +71,19 @@ class UsersController {
     }
 
     // perfom login
-    const _jwt = require('jsonwebtoken');
-    const _jwtSecret = ENV.parsed.JWT_SECRET;
-    const _payload = { email: this.request.body.email };
-    const _token = _jwt.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' });
+    const _jwt = require('jsonwebtoken')
+    const _jwtSecret = ENV.parsed.JWT_SECRET
+    const _payload = { email: this.request.body.email }
+    const _token = _jwt.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' })
 
     // response
     sendResponse.success(this.res, httpResponse.status.ok, { token: _token })
   }
 
-
   /*******************************************************
   *       Display a listing of the resource.
   ********************************************************/
-  async index() {
+  async index () {
     try {
       return this.usersModel
         .findAll({
@@ -97,23 +92,22 @@ class UsersController {
             attributes: ['dateOfBirth', 'placeOfBirth', 'gender']
           }],
           order: [
-            ['createdAt', 'DESC'],
-          ],
+            ['createdAt', 'DESC']
+          ]
         })
         .then((data) => sendResponse.success(this.res, httpResponse.status.ok, data))
         .catch((error) => {
           return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
-        });
+        })
     } catch (error) {
-      return sendResponse.error(this.res, httpResponse.status.internalServerError, error);
+      return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
     }
   }
-
 
   /*******************************************************
   *       Create User
   ********************************************************/
-  async createUser(user) {
+  async createUser (user) {
     try {
       return this.usersModel
         .create(user)
@@ -126,7 +120,7 @@ class UsersController {
             errorCode: httpResponse.status.badRequest,
             error: error
           }
-        });
+        })
     } catch (error) {
       return {
         success: false,
@@ -136,11 +130,10 @@ class UsersController {
     }
   }
 
-
   /*******************************************************
   *       Attach User Info
   ********************************************************/
-  async attachUserInfo(userId, userData) {
+  async attachUserInfo (userId, userData) {
     try {
       const _userData = {
         ...{ userId: userId },
@@ -157,7 +150,7 @@ class UsersController {
             errorCode: httpResponse.status.badRequest,
             error: error
           }
-        });
+        })
     } catch (error) {
       return {
         success: false,
@@ -167,4 +160,4 @@ class UsersController {
     }
   }
 }
-export default ({ req, res }) => new UsersController({ req, res });
+export default ({ req, res }) => new UsersController({ req, res })

@@ -8,7 +8,7 @@
     "db-test:create": "NODE_ENV=test sequelize-cli db:create",
     "db:create": "NODE_ENV=production sequelize-cli db:create",
     "dev": "NODE_ENV=development nodemon --exec npm run start",
-    "start": "babel-node app.js"
+    "start": "standard && babel-node app.js"
   },
   "author": "Hasan Sas",
   "license": "ISC",
@@ -33,5 +33,18 @@
     "nodemon": "^2.0.15",
     "sequelize-cli": "^6.4.1",
     "standard": "^16.0.4"
+  },
+  "standard": {
+    "globals": [
+      "expressValidator",
+      "db",
+      "sendResponse",
+      "httpResponse",
+      "ENV",
+      "authenticateJWT",
+      "ROOT_DIR",
+      "APP_PORT",
+      "IO"
+    ]
   }
 }

@@ -2,49 +2,49 @@
  * Send Response
  */
 
-'use strict';
+'use strict'
 
 export const sendSuccessResponse = function (res, code, data, message = 'Successful') {
   return res.status(code).send({
     status: 'success',
     message,
     data
-  });
+  })
 }
 
 export const sendErrorResponse = function (res, code, error = null) {
-  const _httpResponseMessage = httpResponse.message(code);
-  let _errorMessage = error.message ?? _httpResponseMessage.description;
-  let _error = error.errors ?? null;
+  const _httpResponseMessage = httpResponse.message(code)
+  let _errorMessage = error.message ?? _httpResponseMessage.description
+  const _error = error.errors ?? null
 
   if (error.name) {
     switch (error.name) {
       case 'SequelizeConnectionRefusedError':
-        _errorMessage = 'Error establishing a database connection';
-        break;
+        _errorMessage = 'Error establishing a database connection'
+        break
 
       case 'SequelizeValidationError':
-        break;
+        break
 
       default:
-        break;
+        break
     }
   }
 
   let _payload = {
     status: 'error',
-    message: _errorMessage,
+    message: _errorMessage
   }
 
   if (_error != null) {
     _payload = { ..._payload, ...{ error: _error } }
   }
-  return res.status(code).send(_payload);
+  return res.status(code).send(_payload)
 }
 
 const sendResponse = {
   success: sendSuccessResponse,
-  error: sendErrorResponse,
+  error: sendErrorResponse
 }
 
-export default sendResponse;
+export default sendResponse

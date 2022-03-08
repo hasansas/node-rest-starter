@@ -2,7 +2,7 @@
  * User Info Model
  */
 
-'use strict';
+'use strict'
 
 module.exports = (sequelize, DataTypes) => {
   const UserInfo = sequelize.define(
@@ -20,16 +20,16 @@ module.exports = (sequelize, DataTypes) => {
       },
       dateOfBirth: {
         type: DataTypes.STRING,
-        field: 'date_of_birth',
+        field: 'date_of_birth'
       },
       placeOfBirth: {
         type: DataTypes.STRING,
-        field: 'place_of_birth',
+        field: 'place_of_birth'
       },
       gender: {
         type: DataTypes.ENUM,
         values: ['male', 'female']
-      },
+      }
     },
     {
       tableName: 'user_infos',
@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       scopes: {
         // ..
-      },
+      }
     }
   )
   UserInfo.associate = function (models) {
