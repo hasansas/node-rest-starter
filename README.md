@@ -38,15 +38,16 @@
 
 
 ## JavaScript Standard Style
+> [JavaScript Standard Style](https://standardjs.com) is a style guide with a linter and an automatic code fixer
+
 ### The Rules
 
-1. **2 spaces** – for indentation
-2. **Single quotes for strings** – except to avoid escaping
-3. **No unused variables** – this one catches tons of bugs!
-4. **No semicolons** 
-6. **Space after keywords** `if (condition) { ... }`
-7. **Space after function name** `function name (arg) { ... }`
-8. **Always use === instead of ==** – but `obj == null` is allowed to check `null || undefined`
-9. **Always handle the node.js err function parameter**
-
-[Learn more](https://standardjs.com/)
+* **2 spaces** – for indentation
+* **Single quotes for strings** – except to avoid escaping
+* **No unused variables** – this one catches tons of bugs!
+* **No semicolons** 
+* **Space after keywords** `if (condition) { ... }`
+* **Space after function name** `function name (arg) { ... }`
+* **Always use === instead of ==** – but `obj == null` is allowed to check `null || undefined`
+* **Always handle the node.js err function parameter**
+* And [more](https://standardjs.com/rules.html)
