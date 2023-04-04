@@ -37,6 +37,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false
       },
+      isEmailVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      isPhoneVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
       image: {
         type: DataTypes.STRING
       }
@@ -47,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       paranoid: true,
       defaultScope: {
-        attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] }
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] }
       },
       scopes: {
         // ..
@@ -55,8 +63,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   )
   Users.associate = function (models) {
-    Users.hasOne(models.userInfo, {
-      // as: 'userInfo',
+    Users.belongsToMany(models.roles, {
+      hooks: true,
+      through: 'usersRoles',
+      foreignKey: 'user_id'
+    })
+    Users.hasOne(models.usersInfo, {
       foreignKey: 'user_id',
       required: false
     })

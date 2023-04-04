@@ -4,16 +4,21 @@
 
 'use strict'
 
-export const sendSuccessResponse = function (res, code, data, message = 'Successful') {
-  return res.status(code).send({
+import httpResponse from './http_response.js'
+
+export const sendSuccessResponse = function ({ res, statusCode, data, message = 'Successful' }) {
+  if (statusCode === 501) {
+    return res.status(statusCode).send(httpResponse.message({ statusCode }).title)
+  }
+  return res.status(statusCode).send({
     status: 'success',
     message,
     data
   })
 }
 
-export const sendErrorResponse = function (res, code, error = null) {
-  const _httpResponseMessage = httpResponse.message(code)
+export const sendErrorResponse = function ({ res, req, statusCode, error = {} }) {
+  const _httpResponseMessage = httpResponse.message({ req, statusCode })
   let _errorMessage = error.message ?? _httpResponseMessage.description
   const _error = error.errors ?? null
 
@@ -39,7 +44,7 @@ export const sendErrorResponse = function (res, code, error = null) {
   if (_error != null) {
     _payload = { ..._payload, ...{ error: _error } }
   }
-  return res.status(code).send(_payload)
+  return res.status(statusCode).send(_payload)
 }
 
 const sendResponse = {

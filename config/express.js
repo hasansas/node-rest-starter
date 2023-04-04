@@ -4,12 +4,13 @@
 
 'use strict'
 
+import bodyParser from 'body-parser'
+import fs from 'fs'
+import path from 'path'
 import httpResponse from '../helpers/http_response'
 import sendResponse from '../helpers/send_response'
+import { upload } from './fileUpload'
 
-const bodyParser = require('body-parser')
-const multer = require('multer')
-const upload = multer()
 const expressValidator = require('express-validator')
 
 export default function (app) {
@@ -22,12 +23,32 @@ export default function (app) {
   app.use(bodyParser.json())
 
   // parsing multipart/form-data
-  app.use(upload.array())
+  app.use(upload)
 
   // Validator
-  global.expressValidator = expressValidator
+  global.EXPRESS_VALIDATOR = expressValidator
 
   // Response
-  global.httpResponse = httpResponse
-  global.sendResponse = sendResponse
+  global.HTTP_RESPONSE = httpResponse
+  global.SEND_RESPONSE = sendResponse
+
+  // Media storage
+  app.get('/media', (req, res) => {
+    res.send('401 - Forbiden')
+  })
+
+  app.get('/media/*', (req, res) => {
+    const reqUrl = req.url.split('/')
+    const url = ['/storage', ...reqUrl.slice(2)]
+    const filePath = path.join(ROOT_DIR, url.join('/'))
+    try {
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath)
+      } else {
+        res.send('404 - Not found')
+      }
+    } catch (err) {
+      res.send('500 - internal server error')
+    }
+  })
 };

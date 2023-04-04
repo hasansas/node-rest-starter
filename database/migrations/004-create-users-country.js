@@ -1,26 +1,23 @@
 'use strict'
 
 export async function up (queryInterface, Sequelize) {
-  await queryInterface.createTable('user_infos', {
-    user_id: {
+  await queryInterface.createTable('users_country', {
+    userId: {
       type: Sequelize.UUID,
       defaultValue: Sequelize.UUIDV4,
       unique: true,
       references: { model: 'users', key: 'id' },
       onDelete: 'CASCADE',
+      field: 'user_id',
       allowNull: false
     },
-    dateOfBirth: {
+    countryId: {
       type: Sequelize.STRING,
-      field: 'date_of_birth'
+      field: 'country_id'
     },
-    placeOfBirth: {
+    countryName: {
       type: Sequelize.STRING,
-      field: 'place_of_birth'
-    },
-    gender: {
-      type: Sequelize.ENUM,
-      values: ['male', 'female']
+      field: 'country_name'
     },
     createdAt: {
       type: Sequelize.DATE,
@@ -45,5 +42,5 @@ export async function up (queryInterface, Sequelize) {
   })
 }
 export async function down (queryInterface, Sequelize) {
-  await queryInterface.dropTable('user_infos')
+  await queryInterface.dropTable('users_country')
 }

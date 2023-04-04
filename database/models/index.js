@@ -25,7 +25,7 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database, config.username, config.password, sequalizeConfig)
 }
 
-sync(path.join(ROOT_DIR, '/api/**/**/model.js')).forEach(function (file) {
+sync(path.join(ROOT_DIR, '/api/**/**/models/*_model.js')).forEach(function (file) {
   const model = require(file)(sequelize, Sequelize.DataTypes)
   db[model.name] = model
 })

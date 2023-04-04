@@ -6,7 +6,7 @@
 
 export default function (req, res, next) {
   const _xApiKeyHeader = req.headers['x-api-key']
-  const _xApiKey = ENV.parsed.API_SECRET
+  const _xApiKey = ENV.API_SECRET
 
   if (!_xApiKeyHeader) {
     return res.status(403).json({
