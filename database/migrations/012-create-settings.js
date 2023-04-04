@@ -1,50 +1,20 @@
 'use strict'
 
 export async function up (queryInterface, Sequelize) {
-  await queryInterface.createTable('users', {
+  await queryInterface.createTable('settings', {
     id: {
-      type: Sequelize.UUID,
-      defaultValue: Sequelize.UUIDV4,
-      allowNull: false,
-      primaryKey: true
+      type: Sequelize.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     name: {
-      type: Sequelize.STRING,
-      allowNull: false
-    },
-    email: {
       type: Sequelize.STRING,
       unique: true,
       allowNull: false
     },
-    phoneNumber: {
+    value: {
       type: Sequelize.STRING,
-      field: 'phone_number'
-    },
-    password: {
-      type: Sequelize.STRING
-    },
-    firstLogin: {
-      type: Sequelize.BOOLEAN,
-      defaultValue: true,
-      field: 'first_login'
-    },
-    active: {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false
-    },
-    isEmailVerified: {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false,
-      field: 'is_email_verified'
-    },
-    isPhoneVerified: {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false,
-      field: 'is_phone_verified'
-    },
-    image: {
-      type: Sequelize.STRING
+      allowNull: false
     },
     createdAt: {
       type: Sequelize.DATE,
@@ -78,5 +48,5 @@ export async function up (queryInterface, Sequelize) {
   })
 }
 export async function down (queryInterface, Sequelize) {
-  await queryInterface.dropTable('users')
+  await queryInterface.dropTable('settings')
 }

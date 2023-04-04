@@ -7,10 +7,11 @@
 import express from 'express'
 import path from 'path'
 import http from 'http'
+import cors from 'cors'
 import configExpress from './config/express'
 import router from './router'
-import socketIO from './socket_io'
-import authenticateJWT from './middleware/jwt'
+import socketIO from './socketio'
+import auth from './middleware/auth'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -23,16 +24,16 @@ const httpServer = http.createServer(app)
 global.ROOT_DIR = path.resolve(__dirname, './')
 
 // Loading config from .env
-global.ENV = require('dotenv').config({ path: path.resolve(ROOT_DIR, '.env') })
-global.APP_HOST = ENV.parsed.APP_HOST
-global.APP_PORT = ENV.parsed.APP_PORT
+global.ENV = require('dotenv').config({ path: path.resolve(ROOT_DIR, '.env') }).parsed
 
-// JWT Middleware
-global.authenticateJWT = authenticateJWT
+// Auth Middleware
+global.AUTH = auth
 
 // Database
-const db = require('./database/models')
-global.db = db
+global.DB = require('./database/models')
+
+// Whatsapp
+global.WA_CLIENTS = []
 
 /****************************************
 *         Socket IO
@@ -47,6 +48,9 @@ socketIO(httpServer)
 // Load express configurations
 configExpress(app)
 
+// Cors
+app.use(cors())
+
 // Load router
 router(app)
 
@@ -55,6 +59,6 @@ router(app)
 *****************************************/
 
 // Start server
-httpServer.listen(APP_PORT, () => {
-  console.log(`App listening on port ${APP_PORT}`)
+httpServer.listen(ENV.APP_PORT, () => {
+  console.log(`App listening on port ${ENV.APP_PORT}`)
 })

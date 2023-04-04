@@ -1,38 +1,39 @@
 /**
- * User Info Model
+ * User Verivications Model
  */
 
 'use strict'
 
 module.exports = (sequelize, DataTypes) => {
-  const UserInfo = sequelize.define(
-    'userInfo',
+  const UsersInfo = sequelize.define(
+    'userVerifications',
     {
+      id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true
+      },
       userId: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        unique: true,
         references: { model: 'users', key: 'id' },
         onDelete: 'CASCADE',
-        allowNull: false,
-        field: 'user_id',
-        primaryKey: true
+        allowNull: false
       },
-      dateOfBirth: {
+      verificationType: {
+        type: DataTypes.STRING
+      },
+      token: {
         type: DataTypes.STRING,
-        field: 'date_of_birth'
+        allowNull: false
       },
-      placeOfBirth: {
+      expiredAt: {
         type: DataTypes.STRING,
-        field: 'place_of_birth'
-      },
-      gender: {
-        type: DataTypes.ENUM,
-        values: ['male', 'female']
+        allowNull: false
       }
     },
     {
-      tableName: 'user_infos',
+      tableName: 'users_verification',
       freezeTableName: true,
       defaultScope: {
         attributes: { exclude: ['createdAt', 'updatedAt'] }
@@ -42,8 +43,8 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   )
-  UserInfo.associate = function (models) {
+  UsersInfo.associate = function (models) {
     // associations can be defined here
   }
-  return UserInfo
+  return UsersInfo
 }

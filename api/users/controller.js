@@ -4,159 +4,493 @@
 
 'use strict'
 
+import bcrypt from 'bcrypt'
+import moment from 'moment'
+import axios from 'axios'
+import JWTR from 'jwt-redis'
+import stringHex from '../../helpers/string_hex'
+import mail from '../../helpers/mail'
+import roleMiddleware from '../../middleware/role'
+import SequalizePagintaion from '../../libs/sequalize_pagintaion'
+import Storage from '../../libs/storage'
+import Redis from '../../libs/redis'
+
 class UsersController {
   constructor ({ req, res }) {
     this.request = req
     this.query = req.query
     this.res = res
-    this.usersModel = db.users
-    this.userInfoModel = db.userInfo
+    this.usersModel = DB.users
+    this.usersInfoModel = DB.usersInfo
+    this.rolesModel = DB.roles
+    this.usersRolesModel = DB.usersRoles
+    this.userVerificationsModel = DB.userVerifications
+    this.clientsModel = DB.clients
+    this.packagesModel = DB.packages
+    this.clientsPackagesModel = DB.clientsPackages
+    this.storage = Storage()
+    this.redis = Redis()
   }
 
-  /*******************************************************
-  *       Register User
-  ********************************************************/
+  /**
+   * Register User
+   *
+   * @param {string} name
+   * @param {string} email
+   * @param {string} password
+   * @return {Object} HTTP Response
+   */
   async register () {
+    try {
+      // validate request
+      const errors = EXPRESS_VALIDATOR.validationResult(this.request)
+      if (!errors.isEmpty()) {
+        const _error = {
+          errors: errors.array()
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
+      }
+
+      // save data
+      const _salt = await bcrypt.genSalt(10)
+      const _name = this.request.body.name
+      const _email = this.request.body.email
+      const _password = await bcrypt.hash(this.request.body.password, _salt)
+      const _role = 'user'
+      const _data = {
+        name: _name,
+        email: _email,
+        password: _password
+      }
+
+      // create user
+      const _createUser = await this.createUser(_data, _role)
+      if (!_createUser.success) {
+        return SEND_RESPONSE.error({ res: this.res, statusCode: _createUser.errorCode, error: _createUser.error })
+      }
+
+      // create confirmation code
+      const _confirmationCode = Math.floor(100000 + Math.random() * 900000)
+      const _expiredCodeAt = moment().add(24, 'hours').toISOString()
+      const _createConfirmationCode = await this.userVerificationsModel.create({
+        userId: _createUser.data.id,
+        token: _confirmationCode,
+        expiredAt: _expiredCodeAt,
+        verificationType: 'email'
+      })
+      if (!_createConfirmationCode.success) {
+        // TODO: return create code error
+      }
+
+      // send email confirmation code
+      const _mailTo = _email
+      const _mailTemplate = 'register'
+      const _mailData = { name: _name, confirmation_code: _confirmationCode }
+      const _sendMail = await mail.send(_mailTo, _mailTemplate, _mailData)
+      if (!_sendMail) {
+        // TODO: return email error
+      }
+
+      // send telegram confirmation code (group dev)
+      const _emailHost = _email.split('@')[1]
+      const _emailDev = 'dev.edumo.com'
+      if (_emailHost === _emailDev) {
+        const telegramMessageText = `Confirmation code for ${_email} ${_confirmationCode}`
+        const sendTelegramMessageUrl = ENV.TELE_API_URL + '/bot' + ENV.TELE_BOT_TOKEN + '/sendMessage?chat_id=' + ENV.TELE_GROUP_ID + '&text=' + telegramMessageText
+
+        await axios.post(sendTelegramMessageUrl)
+      }
+
+      // success response
+      return SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.created })
+    } catch (error) {
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
+    }
+  }
+
+  /**
+   * Create User
+   *
+   * @param {Object} user userModel
+   * @param {string} role
+   * @return {Object} HTTP Response
+   */
+  async createUser (user, role) {
+    try {
+      // check role
+      if (!role) {
+        return {
+          success: false,
+          errorCode: HTTP_RESPONSE.status.badRequest,
+          error: { message: 'Role required' }
+        }
+      }
+
+      const _role = await this.rolesModel.findOne({
+        where: {
+          name: role
+        }
+      })
+      if (_role === null) {
+        return {
+          success: false,
+          errorCode: HTTP_RESPONSE.status.badRequest,
+          error: { message: 'Invalid role' }
+        }
+      }
+
+      // create user
+      const result = await DB.sequelize.transaction(async (t) => {
+        const _createUser = await this.usersModel.create(user, { transaction: t })
+        const userId = _createUser.dataValues.id
+
+        // attach user role
+        const _userRole = { userId, roleId: _role.id }
+        await this.usersRolesModel.create(_userRole, { transaction: t })
+
+        // attach user info
+        await this.usersInfoModel.create({ userId }, { transaction: t })
+
+        // success response
+        return { success: true, data: _createUser.dataValues }
+      })
+      return result
+    } catch (error) {
+      return {
+        success: false,
+        errorCode: HTTP_RESPONSE.status.internalServerError,
+        error
+      }
+    }
+  }
+
+  /**
+   * Confirm Register
+   *
+   * @param {string} email
+   * @param {string} code
+   * @return {Object} HTTP Response
+   */
+  async confirmRegister () {
     // validate request
-    const errors = expressValidator.validationResult(this.request)
+    const errors = EXPRESS_VALIDATOR.validationResult(this.request)
     if (!errors.isEmpty()) {
       const error = {
         errors: errors.array()
       }
-      return sendResponse.error(this.res, httpResponse.status.badRequest, error)
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
     }
 
-    // save data
     try {
-      const _data = {
-        name: this.request.body.name,
-        email: this.request.body.email
+      // validate user
+      const _email = this.request.body.email
+      const _user = await this.usersModel.findOne({ where: { email: _email } })
+      if (_user === null) {
+        const _error = {
+          message: 'User not found'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
       }
 
-      // create user
-      const _createUser = await this.createUser(_data)
-      if (!_createUser.success) {
-        return sendResponse.error(this.res, _createUser.errorCode, _createUser.error)
+      if (_user.active && _user.isEmailVerified) {
+        const _error = {
+          message: 'Account already verified'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
       }
 
-      // attach user info
-      const _attachUserInfo = await this.attachUserInfo(_createUser.data.id, _data)
-      if (!_attachUserInfo.success) {
-        return sendResponse.error(this.res, _attachUserInfo.errorCode, _attachUserInfo.error)
+      // validate confirmation code
+      const _code = this.request.body.code
+      const _userVerification = await this.userVerificationsModel.findOne({ where: { user_id: _user.id, token: _code } })
+      if (_userVerification === null) {
+        const _error = {
+          message: 'Invalid confirmation code.'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
       }
+
+      if (new Date() > _userVerification.expiredAt) {
+        const _error = {
+          message: 'The confirmation code was expired.'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
+      }
+
+      // update user
+      await this.usersModel.update(
+        { active: true, isEmailVerified: true },
+        { where: { id: _user.id } }
+      )
+
+      // delete token
+      await this.userVerificationsModel.destroy({ where: { id: _userVerification.id } })
 
       // success response
-      return sendResponse.success(this.res, httpResponse.status.created, { id: _createUser.data.id })
+      SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok })
     } catch (error) {
-      return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
     }
   }
 
-  /*******************************************************
-  *       Login User
-  ********************************************************/
+  /**
+   * Login User
+   *
+   * @param {string} email
+   * @param {string} password
+   * @return {Object} HTTP Response
+   */
   async login () {
     // validate request
-    const errors = expressValidator.validationResult(this.request)
+    const errors = EXPRESS_VALIDATOR.validationResult(this.request)
     if (!errors.isEmpty()) {
-      return sendResponse.error(this.res, httpResponse.status.badRequest, 'Bad Request', errors.array())
-    }
-
-    // check user credential
-    if (this.request.body.email !== 'johndoe@domain.com' || this.request.body.password !== '123456') {
       const error = {
-        message: 'Invalid email and password combination'
+        errors: errors.array()
       }
-      return sendResponse.error(this.res, httpResponse.status.badRequest, error)
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
     }
 
     // perfom login
-    const _jwt = require('jsonwebtoken')
-    const _jwtSecret = ENV.parsed.JWT_SECRET
-    const _payload = { email: this.request.body.email }
-    const _token = _jwt.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' })
+    try {
+      const _bcrypt = require('bcrypt')
+      const _email = this.request.body.email
+      const _password = stringHex.fromHex(this.request.body.password)
 
-    // response
-    sendResponse.success(this.res, httpResponse.status.ok, { token: _token })
+      // check user credential
+      const user = await this.usersModel.findOne({
+        where: { email: _email },
+        attributes: ['id', 'password', 'active'],
+        include: [{
+          model: this.rolesModel,
+          attributes: ['name'],
+          through: { attributes: [] }
+        }]
+      })
+
+      if (!user) {
+        return SEND_RESPONSE.error({
+          res: this.res,
+          statusCode: HTTP_RESPONSE.status.badRequest,
+          error: { message: 'Email not registered' }
+        })
+      }
+
+      const validPassword = await _bcrypt.compare(_password, user.password)
+      if (!validPassword) {
+        const _error = {
+          message: 'Incorect password'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
+      }
+
+      if (!user.active) {
+        const _error = {
+          message: 'User not activated'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
+      }
+
+      // Check role
+      const _role = this.request.params.role
+      const _roles = user.roles.map((item) => {
+        return item.name
+      })
+
+      if (!_roles.includes(_role)) {
+        const _error = {
+          message: 'Role not granted or does not exist'
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error: _error })
+      }
+
+      // redis connect
+      const redis = Redis()
+      const connect = await redis.connect()
+      if (!connect.success) {
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error: connect.error })
+      }
+      const redisClient = connect.client
+
+      // create token
+      const jwtr = new JWTR(redisClient)
+      const _jwtSecret = ENV.JWT_SECRET
+      const _payload = { id: user.id, role: _role, jti: user.id }
+      const _token = await jwtr.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' })
+
+      // response
+      SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok, data: { token: _token } })
+    } catch (error) {
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
+    }
   }
 
-  /*******************************************************
-  *       Display a listing of the resource.
-  ********************************************************/
+  /**
+   * Logout User
+   *
+   * @return {Object} HTTP Response
+   */
+  async logout () {
+    try {
+      // redis connect
+      const redis = Redis()
+      const connect = await redis.connect()
+      if (!connect.success) {
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error: connect.error })
+      }
+      const redisClient = connect.client
+
+      // destory token
+      const jwtr = new JWTR(redisClient)
+      const jti = this.request.authUser.jti
+      const _jwtSecret = ENV.JWT_SECRET
+      await jwtr.destroy(jti, _jwtSecret)
+
+      // response
+      SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok })
+    } catch (error) {
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
+    }
+  }
+
+  /**
+   * Logout User (all devices)
+   *
+   * @return {Object} HTTP Response
+   */
+  async logoutAllDevices () {
+    try {
+      SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.notImplement })
+    } catch (error) {
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
+    }
+  }
+
+  /**
+   * Display a listing of the resource.
+   *
+   * @return {Object} HTTP Response
+   */
   async index () {
     try {
+      // Role authorization
+      roleMiddleware({ req: this.request, res: this.res, allowedRoles: ['developer', 'superadmin', 'admin', 'client'] })
+
+      // Get data
+      const sequalizePagintaion = SequalizePagintaion(this.request)
       return this.usersModel
-        .findAll({
+        .findAndCountAll({
           include: [{
-            model: this.userInfoModel,
+            model: this.usersInfoModel,
             attributes: ['dateOfBirth', 'placeOfBirth', 'gender']
           }],
+          offset: sequalizePagintaion.offset(),
+          limit: sequalizePagintaion.limit,
           order: [
             ['createdAt', 'DESC']
           ]
         })
-        .then((data) => sendResponse.success(this.res, httpResponse.status.ok, data))
+        .then((data) => {
+          const _data = {
+            total: data.total,
+            rows: data.rows.map(data => {
+              const _paretDir = 'users/' + data.id
+              data.image = this.storage.url({ parentDir: _paretDir, fileName: data.image })
+              return data
+            })
+          }
+          const resData = sequalizePagintaion.paginate(_data)
+
+          return SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok, data: resData })
+        })
         .catch((error) => {
-          return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
+          return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
         })
     } catch (error) {
-      return sendResponse.error(this.res, httpResponse.status.internalServerError, error)
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
     }
   }
 
-  /*******************************************************
-  *       Create User
-  ********************************************************/
-  async createUser (user) {
+  /**
+   * Display my profile.
+   *
+   * @return {Object} HTTP Response
+   */
+  async me () {
     try {
+      // Get data
+      console.log(this.request.authUser.id)
       return this.usersModel
-        .create(user)
+        .findOne({
+          where: {
+            id: this.request.authUser.id
+          },
+          include: [{
+            model: this.usersInfoModel,
+            attributes: ['dateOfBirth', 'placeOfBirth', 'gender']
+          }]
+        })
         .then((data) => {
-          return { success: true, data: data }
+          if (data !== null) {
+            const _paretDir = 'users/' + data.id
+            data.image = this.storage.url({ parentDir: _paretDir, fileName: data.image })
+          }
+          return SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok, data })
         })
         .catch((error) => {
-          return {
-            success: false,
-            errorCode: httpResponse.status.badRequest,
-            error: error
-          }
+          return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
         })
     } catch (error) {
-      return {
-        success: false,
-        errorCode: httpResponse.status.internalServerError,
-        error: error
-      }
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
     }
   }
 
-  /*******************************************************
-  *       Attach User Info
-  ********************************************************/
-  async attachUserInfo (userId, userData) {
+  /**
+   * Update my profile.
+   *
+   * @return {Object} HTTP Response
+   */
+  async update () {
     try {
-      const _userData = {
-        ...{ userId: userId },
-        ...userData
+      // Update user
+      let userAttributes = {}
+
+      if (this.request.body.name) {
+        userAttributes = { ...userAttributes, ...{ name: this.request.body.name } }
       }
-      return this.userInfoModel
-        .create(_userData)
-        .then((data) => {
-          return { success: true, data: data }
-        })
-        .catch((error) => {
-          return {
-            success: false,
-            errorCode: httpResponse.status.badRequest,
-            error: error
-          }
-        })
+      if (this.request.body.image) {
+        userAttributes = { ...userAttributes, ...{ image: this.request.body.image } }
+      }
+      await this.usersModel.update(
+        userAttributes,
+        { where: { id: this.request.authUser.id } }
+      )
+
+      // Update user info
+      let userInfoAttributes = {}
+      if (this.request.body.dateOfBirth) {
+        userInfoAttributes = { ...userInfoAttributes, ...{ dateOfBirth: this.request.body.dateOfBirth } }
+      }
+      if (this.request.body.placeOfBirth) {
+        userInfoAttributes = { ...userInfoAttributes, ...{ placeOfBirth: this.request.body.placeOfBirth } }
+      }
+      if (this.request.body.gender) {
+        userInfoAttributes = { ...userInfoAttributes, ...{ gender: this.request.body.gender } }
+      }
+      const _userInfo = await this.usersInfoModel.findOne({ where: { user_id: this.request.authUser.id } })
+
+      if (_userInfo !== null) {
+        await this.usersInfoModel.update(
+          userInfoAttributes,
+          { where: { user_id: this.request.authUser.id } }
+        )
+      } else {
+        await this.usersInfoModel.create(
+          { ...{ user_id: this.request.authUser.id }, ...userInfoAttributes }
+        )
+      }
+      // success response
+      return SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok })
     } catch (error) {
-      return {
-        success: false,
-        errorCode: httpResponse.status.internalServerError,
-        error: error
-      }
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
     }
   }
 }
