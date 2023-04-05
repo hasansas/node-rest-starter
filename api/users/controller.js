@@ -172,16 +172,16 @@ class UsersController {
    * @return {Object} HTTP Response
    */
   async confirmRegister () {
-    // validate request
-    const errors = EXPRESS_VALIDATOR.validationResult(this.request)
-    if (!errors.isEmpty()) {
-      const error = {
-        errors: errors.array()
-      }
-      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
-    }
-
     try {
+      // validate request
+      const errors = EXPRESS_VALIDATOR.validationResult(this.request)
+      if (!errors.isEmpty()) {
+        const error = {
+          errors: errors.array()
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
+      }
+
       // validate user
       const _email = this.request.body.email
       const _user = await this.usersModel.findOne({ where: { email: _email } })
@@ -240,17 +240,17 @@ class UsersController {
    * @return {Object} HTTP Response
    */
   async login () {
-    // validate request
-    const errors = EXPRESS_VALIDATOR.validationResult(this.request)
-    if (!errors.isEmpty()) {
-      const error = {
-        errors: errors.array()
-      }
-      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
-    }
-
-    // perfom login
     try {
+      // validate request
+      const errors = EXPRESS_VALIDATOR.validationResult(this.request)
+      if (!errors.isEmpty()) {
+        const error = {
+          errors: errors.array()
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
+      }
+
+      // perfom login
       const _bcrypt = require('bcrypt')
       const _email = this.request.body.email
       const _password = stringHex.fromHex(this.request.body.password)
@@ -318,6 +318,115 @@ class UsersController {
 
       // response
       SEND_RESPONSE.success({ res: this.res, statusCode: HTTP_RESPONSE.status.ok, data: { token: _token } })
+    } catch (error) {
+      return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
+    }
+  }
+
+  /**
+   * auth Google
+   *
+   * @param {string} email
+   * @param {string} password
+   * @return {Object} HTTP Response
+   */
+  async authGoogle () {
+    try {
+      const vm = this
+
+      // validate request
+      const errors = EXPRESS_VALIDATOR.validationResult(this.request)
+      if (!errors.isEmpty()) {
+        const error = {
+          errors: errors.array()
+        }
+        return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.badRequest, error })
+      }
+
+      // get access token
+      const authGoogleApiTokenUrl = ENV.AUTH_GOOGLE_API_TOKEN_URL
+      const authGoogleApiUserInfoUrl = ENV.AUTH_GOOGLE_API_USERINFO_URL
+      const postData = {
+        grant_type: 'authorization_code',
+        client_id: ENV.AUTH_GOOGLE_CLIENT_ID,
+        client_secret: ENV.AUTH_GOOGLE_CLIENT_SECRET,
+        redirect_uri: this.request.body.redirect_uri,
+        code: this.request.body.code
+      }
+
+      return axios.post(authGoogleApiTokenUrl, postData)
+        .then(async function (response) {
+          const responseData = response.data
+          const accessToken = responseData.access_token
+
+          // get user info
+          return axios.get(`${authGoogleApiUserInfoUrl}/me?access_token=${accessToken}`)
+            .then(async function (response) {
+              const _role = 'user'
+              const _googleUser = response.data
+
+              // get user
+              let _user = await vm.usersModel.findOne({ where: { email: _googleUser.email } })
+
+              // create user if not exist
+              if (_user === null) {
+                // create new user
+                const _userName = _googleUser.name
+                const _userEmail = _googleUser.email
+                const _userImage = _googleUser.picture
+                const _data = {
+                  name: _userName,
+                  email: _userEmail,
+                  image: _userImage,
+                  loginFrom: 'google',
+                  isEmailVerified: true,
+                  active: true
+                }
+
+                const _createUser = await vm.createUser(_data, _role)
+                if (!_createUser.success) {
+                  return SEND_RESPONSE.error({ res: vm.res, statusCode: _createUser.errorCode, error: _createUser.error })
+                }
+
+                // set user data
+                _user = _createUser.data
+
+                // send email registration success
+                const _mailTo = _userEmail
+                const _mailTemplate = 'register_success'
+                const _mailData = { name: _userName }
+                const _sendMail = await mail.send(_mailTo, _mailTemplate, _mailData)
+                if (!_sendMail) {
+                  // TODO: return email error
+                }
+              }
+
+              // redis connect
+              const redis = Redis()
+              const connect = await redis.connect()
+              if (!connect.success) {
+                return SEND_RESPONSE.error({ res: vm.res, statusCode: HTTP_RESPONSE.status.internalServerError, error: connect.error })
+              }
+              const redisClient = connect.client
+
+              // create token
+              const jwtr = new JWTR(redisClient)
+              const _jwtSecret = ENV.JWT_SECRET
+              const _payload = { id: _user.id, role: _role, jti: _user.id }
+              const _token = await jwtr.sign(_payload, _jwtSecret, { expiresIn: 525600, algorithm: 'HS256' })
+
+              // response
+              SEND_RESPONSE.success({ res: vm.res, statusCode: HTTP_RESPONSE.status.ok, data: { token: _token } })
+            })
+            .catch(function (error) {
+              const _error = error.response.data
+              return SEND_RESPONSE.error({ res: vm.res, statusCode: HTTP_RESPONSE.status.badRequest, error: { message: _error } })
+            })
+        })
+        .catch(function (error) {
+          const _error = error.response.data
+          return SEND_RESPONSE.error({ res: vm.res, statusCode: HTTP_RESPONSE.status.badRequest, error: { message: _error } })
+        })
     } catch (error) {
       return SEND_RESPONSE.error({ res: this.res, statusCode: HTTP_RESPONSE.status.internalServerError, error })
     }
