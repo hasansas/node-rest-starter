@@ -29,13 +29,15 @@ module.exports = (sequelize, DataTypes) => {
       password: {
         type: DataTypes.STRING
       },
-      firstLogin: {
+      image: {
+        type: DataTypes.STRING
+      },
+      loginFrom: {
+        type: DataTypes.STRING
+      },
+      isFirstLogin: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
-      },
-      active: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
       },
       isEmailVerified: {
         type: DataTypes.BOOLEAN,
@@ -45,8 +47,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false
       },
-      image: {
-        type: DataTypes.STRING
+      active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       }
     },
     {

@@ -47,6 +47,18 @@ module.exports = function (app, router) {
   )
 
   /**
+   * Auth Google
+   */
+  router.post(
+    '/v1/auth/google',
+    EXPRESS_VALIDATOR.body('code').not().isEmpty(),
+    EXPRESS_VALIDATOR.body('redirect_uri').not().isEmpty(),
+    (req, res) => {
+      UsersController({ req, res }).authGoogle()
+    }
+  )
+
+  /**
    * Logout
    */
   router.post('/v1/auth/logout', AUTH, (req, res) => {
